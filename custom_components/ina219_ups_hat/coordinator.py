@@ -66,7 +66,7 @@ class INA219UpsHatCoordinator(DataUpdateCoordinator):
                 ina219_wrapper.getShuntVoltageSMA_mV() / 1000
             )  # voltage between V+ and V- across the shunt
             total_voltage = bus_voltage + shunt_voltage
-            current = ina219_wrapper.getCurrentSMA_mA()  # current in mA
+            current = ina219_wrapper.getCurrentSMA_mA() * -1  # current in mA
             power = ina219_wrapper.getPowerSMA_W()  # power in W
 
             smooth_bus_voltage = ina219_wrapper.getBusVoltageSMAx2_V()
@@ -75,6 +75,7 @@ class INA219UpsHatCoordinator(DataUpdateCoordinator):
             soc = self._socOcvProvider.get_soc_from_voltage(
                 smooth_bus_voltage / self._batteries_count
             )
+            soc_inu = (smooth_bus_voltage - 3)/1.1*100
 
             power_calculated = bus_voltage * (current / 1000)
 
@@ -110,6 +111,7 @@ class INA219UpsHatCoordinator(DataUpdateCoordinator):
                 "power": round(power_calculated, 2),
                 "read_power": round(power, 2),
                 "soc": round(soc, 1),
+                "soc_inu": round(soc_inu, 1),
                 "remaining_battery_capacity": round(
                     (remaining_battery_capacity * total_voltage) / 1000, 2
                 ),  # in Wh

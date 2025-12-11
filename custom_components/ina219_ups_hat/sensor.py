@@ -40,6 +40,7 @@ async def async_setup_platform(
         PowerSensor(coordinator),
         ReadPowerSensor(coordinator),
         SocSensor(coordinator),
+        SocInuSensor(coordinator),
         RemainingCapacitySensor(coordinator),
         RemainingTimeSensor(coordinator),
         RemainingTimeCustomSensor(coordinator),
@@ -114,6 +115,17 @@ class SocSensor(INA219UpsHatSensor):
     def native_value(self):
         return self._coordinator.data["soc"]
 
+class SocInuSensor(INA219UpsHatSensor):
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator)
+        self._name = "SoC Inu"
+        self._attr_native_unit_of_measurement = PERCENTAGE
+        self._attr_device_class = SensorDeviceClass.BATTERY
+        self._attr_suggested_display_precision = 1
+
+    @property
+    def native_value(self):
+        return self._coordinator.data["soc_inu"]
 
 class RemainingCapacitySensor(INA219UpsHatSensor):
     def __init__(self, coordinator) -> None:
