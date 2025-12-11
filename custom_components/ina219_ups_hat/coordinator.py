@@ -67,7 +67,7 @@ class INA219UpsHatCoordinator(DataUpdateCoordinator):
             )  # voltage between V+ and V- across the shunt
             total_voltage = bus_voltage + shunt_voltage
             current = ina219_wrapper.getCurrentSMA_mA()  # current in mA
-            # power = ina219_wrapper.getPowerSMA_W()  # power in W
+            power = ina219_wrapper.getPowerSMA_W()  # power in W
 
             smooth_bus_voltage = ina219_wrapper.getBusVoltageSMAx2_V()
             smooth_current = ina219_wrapper.getCurrentSMAx2_mA()
@@ -85,10 +85,12 @@ class INA219UpsHatCoordinator(DataUpdateCoordinator):
             if self._battery_capacity is None:
                 remaining_battery_capacity = None
                 remaining_time = None
+                remaining_time_custom = None
             else:
                 remaining_battery_capacity = (self._battery_capacity / 100.0) * soc
                 remaining_battery_capacity = (self._battery_capacity / 100.0) * soc
                 if not online:
+                    remaining_time_custom = round(remaining_battery_capacity / abs(smooth_current), 1)
                     remaining_time = round(
                         10
                         * (remaining_battery_capacity / 1000)
@@ -98,17 +100,21 @@ class INA219UpsHatCoordinator(DataUpdateCoordinator):
                         1,
                     )
                 else:
+                    # // Always show remaining time
                     remaining_time = None
+                    remaining_time_custom = None
 
             return {
                 "voltage": round(total_voltage, 2),
                 "current": round(current / 1000, 2),
                 "power": round(power_calculated, 2),
+                "read_power": round(power, 2),
                 "soc": round(soc, 1),
                 "remaining_battery_capacity": round(
                     (remaining_battery_capacity * total_voltage) / 1000, 2
                 ),  # in Wh
                 "remaining_time": remaining_time,
+                "remaining_time_custom": remaining_time_custom,
                 "online": online,
                 "charging": charging,
             }

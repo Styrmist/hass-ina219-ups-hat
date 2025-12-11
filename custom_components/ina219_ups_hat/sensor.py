@@ -38,9 +38,11 @@ async def async_setup_platform(
         VoltageSensor(coordinator),
         CurrentSensor(coordinator),
         PowerSensor(coordinator),
+        ReadPowerSensor(coordinator),
         SocSensor(coordinator),
         RemainingCapacitySensor(coordinator),
         RemainingTimeSensor(coordinator),
+        RemainingTimeCustomSensor(coordinator),
     ]
     async_add_entities(sensors)
 
@@ -88,6 +90,17 @@ class PowerSensor(INA219UpsHatSensor):
     def native_value(self):
         return self._coordinator.data["power"]
 
+class ReadPowerSensor(INA219UpsHatSensor):
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator)
+        self._name = "Read Power"
+        self._attr_native_unit_of_measurement = UnitOfPower.WATT
+        self._attr_device_class = SensorDeviceClass.POWER
+
+    @property
+    def native_value(self):
+        return self._coordinator.data["read_power"]
+
 
 class SocSensor(INA219UpsHatSensor):
     def __init__(self, coordinator) -> None:
@@ -125,5 +138,44 @@ class RemainingTimeSensor(INA219UpsHatSensor):
         self._attr_suggested_display_precision = 0
 
     @property
+    def native_unit_of_measurement(self):
+        remaining_hours = self._coordinator.data.get("remaining_time")
+        if remaining_hours is None or remaining_hours >= 1:
+            return UnitOfTime.HOURS
+        return UnitOfTime.MINUTES
+
+    @property
     def native_value(self):
-        return self._coordinator.data["remaining_time"]
+        remaining_hours = self._coordinator.data.get("remaining_time")
+        if remaining_hours is None:
+            return None
+        if remaining_hours >= 1:
+            return remaining_hours
+        # For short durations, show minutes instead of fractions of an hour.
+        return remaining_hours * 60
+
+class RemainingTimeCustomSensor(INA219UpsHatSensor):
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator)
+        self._name = "Remaining Time Custom"
+        self._attr_native_unit_of_measurement = UnitOfTime.HOURS
+        self._attr_device_class = SensorDeviceClass.DURATION
+        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        self._attr_suggested_display_precision = 0
+
+    @property
+    def native_unit_of_measurement(self):
+        remaining_hours = self._coordinator.data.get("remaining_time_custom")
+        if remaining_hours is None or remaining_hours >= 1:
+            return UnitOfTime.HOURS
+        return UnitOfTime.MINUTES
+
+    @property
+    def native_value(self):
+        remaining_hours = self._coordinator.data.get("remaining_time_custom")
+        if remaining_hours is None:
+            return None
+        if remaining_hours >= 1:
+            return remaining_hours
+        # For short durations, show minutes instead of fractions of an hour.
+        return remaining_hours * 60
